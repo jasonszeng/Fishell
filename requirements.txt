@@ -1,0 +1,6 @@
+paramiko
+pywebview[cef]
+cefpython3
+requests
+cryptography>=41.0.0
+msgpack>=1.0.0

@@ -1,0 +1,42 @@
+/* Meteor Shower Animation CSS */
+.meteor-shower {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.meteor {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: linear-gradient(45deg, #fff, transparent);
+    border-radius: 50%;
+    animation: meteor-fall linear infinite;
+    opacity: 0;
+}
+
+@keyframes meteor-fall {
+    0% {
+        opacity: 1;
+        transform: translateY(-100vh) translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(100vh) translateX(-100px);
+    }
+}
+
+.meteor:nth-child(1) { left: 10%; animation-duration: 3s; animation-delay: 0s; }
+.meteor:nth-child(2) { left: 20%; animation-duration: 2.5s; animation-delay: 0.5s; }
+.meteor:nth-child(3) { left: 30%; animation-duration: 3.5s; animation-delay: 1s; }
+.meteor:nth-child(4) { left: 40%; animation-duration: 2s; animation-delay: 1.5s; }
+.meteor:nth-child(5) { left: 50%; animation-duration: 4s; animation-delay: 2s; }
+.meteor:nth-child(6) { left: 60%; animation-duration: 2.8s; animation-delay: 2.5s; }
+.meteor:nth-child(7) { left: 70%; animation-duration: 3.2s; animation-delay: 3s; }
+.meteor:nth-child(8) { left: 80%; animation-duration: 2.3s; animation-delay: 3.5s; }
+.meteor:nth-child(9) { left: 90%; animation-duration: 3.8s; animation-delay: 4s; }

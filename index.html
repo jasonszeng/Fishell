@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' https://cdnjs.cloudflare.com https://oxno.me; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https: ws: wss:; frame-src 'self' https://oxno.me;">
+    <title>Fishell</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <!-- Google Fonts (Removed to prevent blocking, using system fonts) -->
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"> -->
+
+    <!-- 本地文件引用 -->
+    <link rel="stylesheet" href="static/style.css">
+    <link rel="stylesheet" href="static/meteor-shower.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Xterm.js -->
+    <link rel="stylesheet" href="static/xterm.css" />
+    <script src="static/xterm.js"></script>
+    <script src="static/xterm-addon-fit.js"></script>
+    <script src="static/xterm-addon-web-links.js"></script>
+
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href="static/atom-one-dark.min.css">
+    <script src="static/highlight.min.js"></script>
+
+    <script src="static/renderer.js" defer></script>
+</head>
+
+<body style="opacity: 0;">
+    <div class="app-container" style="opacity: 0;">
+        <!-- 左侧侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-loader">
+                    <div class="logo-container">
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                    </div>
+                </div>
+                <span>Fishell</span>
+            </div>
+            <nav class="nav-menu">
+                <!-- 这里的 active 类由 JS 控制，主要用于指示侧边栏状态，但现在的 Tab 模式下侧边栏作用减弱 -->
+                <a href="#" class="nav-item" id="nav-dashboard">
+                    <i class="fa-solid fa-server"></i> 机器管理
+                </a>
+                <a href="#" class="nav-item hidden" id="nav-notice">
+                    <i class="fa-solid fa-bullhorn"></i> 公告
+                </a>
+            </nav>
+
+            <!-- 侧边栏服务器信息 (仅在 SSH 会话中显示) -->
+            <div id="sidebar-info" class="sidebar-info hidden">
+                <div class="sidebar-stats-header"></div>
+                <div class="sidebar-info-item">
+                    <span class="info-label">名称</span>
+                    <span class="info-value" id="sb-info-name">--</span>
+                </div>
+                <div class="sidebar-info-item">
+                    <span class="info-label">IP</span>
+                    <span class="info-value copyable" id="sb-info-ip" title="点击复制">--</span>
+                </div>
+                <div class="sidebar-info-item">
+                    <span class="info-label">系统</span>
+                    <span class="info-value" id="sb-info-os">--</span>
+                </div>
+            </div>
+
+            <!-- 侧边栏实时监控 (仅在 SSH 会话中显示) -->
+            <div id="sidebar-stats" class="sidebar-stats hidden">
+                <div class="sidebar-stats-header"></div>
+                <div class="sidebar-stat-item">
+                    <div class="sb-stat-label">CPU <span id="sb-cpu-val">0%</span></div>
+                    <div class="sb-progress">
+                        <div class="sb-bar" id="sb-cpu-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="sidebar-stat-item">
+                    <div class="sb-stat-label">内存 <span id="sb-mem-val">0%</span></div>
+                    <div class="sb-progress">
+                        <div class="sb-bar" id="sb-mem-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="sidebar-stat-item">
+                    <div class="sb-stat-label">磁盘 <span id="sb-disk-val">0%</span></div>
+                    <div class="sb-progress">
+                        <div class="sb-bar" id="sb-disk-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="sidebar-stat-info hidden">
+                    <i class="fa-regular fa-clock"></i> <span id="sb-uptime">运行中</span>
+                </div>
+            </div>
+
+            <!-- 侧边栏文件管理 (仅在 SSH 会话中显示) -->
+            <div id="sidebar-files" class="sidebar-files hidden">
+                <!-- 路径输入和工具按钮在同一行 -->
+                <div class="sftp-toolbar-row">
+                    <input type="text" class="sftp-path-input" id="sftp-path-input" value="/" spellcheck="false">
+                    <button class="btn-icon small no-bg" id="btn-sftp-home" title="Home"><i
+                            class="fa-solid fa-house"></i></button>
+                    <button class="btn-icon small no-bg" id="btn-sftp-refresh" title="刷新"><i
+                            class="fa-solid fa-rotate"></i></button>
+                    <button class="btn-icon small no-bg" id="btn-sftp-upload" title="上传"><i
+                            class="fa-solid fa-upload"></i></button>
+                </div>
+
+                <!-- 文件列表容器 -->
+                <div class="sftp-list-container" id="sftp-list">
+                    <!-- 动态生成 -->
+                    <!-- <div class="sftp-item">
+                        <i class="fa-regular fa-folder"></i> <span class="sftp-name">var</span>
+                    </div> -->
+                    <div class="sftp-loading">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i> 加载中...
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item settings-btn" id="nav-settings" title="系统设置">
+                    <i class="fa-solid fa-gear"></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- 右侧主要内容 -->
+        <main class="main-content">
+            <!-- 移除自定义窗口控制栏，使用原生标题栏 -->
+
+            <!-- Tab 容器 -->
+            <div id="tab-container-wrapper">
+                <div class="tab-group" id="tab-group">
+                    <div class="tab-item active" data-tab="dashboard" id="tab-dashboard">
+                        首页
+                    </div>
+                    <!-- Settings Tab will be added here dynamically -->
+                    <div class="tab-add-btn" id="tab-add-btn" title="新建连接"><i class="fa-solid fa-plus"></i></div>
+                </div>
+            </div>
+
+            <!-- 1. 仪表盘区域 (Dashboard / Home) -->
+            <div id="dashboard-container" class="layout-container">
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <button class="btn-icon primary" id="btn-new-session"><i class="fa-solid fa-plus"></i></button>
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" placeholder="搜索机器名称、IP或备注">
+                        </div>
+                    </div>
+                    <div class="toolbar-right">
+                        <span class="pagination-info"><i class="fa-solid fa-server"></i> <span
+                                id="pagination-text">0/0</span></span>
+                        <button class="btn-icon text-only"><i class="fa-solid fa-rotate-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="content-area">
+                    <div class="view-section">
+                        <div class="session-grid" id="session-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 公告区域 (Notice) -->
+            <div id="notice-container" class="layout-container hidden">
+                <div class="notice-page">
+                    <div class="notice-page-header">
+                        <i class="fa-solid fa-bullhorn"></i>
+                        <h2 id="notice-page-title">公告</h2>
+                    </div>
+                    <div class="notice-page-content" id="notice-page-content">
+                        暂无公告
+                    </div>
+                    <div class="notice-page-footer" id="notice-page-time"></div>
+                </div>
+            </div>
+
+            <!-- 3. 设置区域 (Settings - 独立视图) -->
+            <div id="settings-container" class="layout-container hidden">
+                <div class="settings-scroll-area">
+                    <div class="settings-container-inner">
+
+                        <!-- 密码保护 -->
+                        <div class="settings-section">
+                            <div class="settings-section-title">密码保护</div>
+                            <div class="settings-card">
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-text">
+                                            <div class="settings-label">应用锁</div>
+                                            <div class="settings-desc">启动时需要密码 <a href="#" class="link-btn"
+                                                    id="link-modify-password"
+                                                    style="margin-left: 8px; color: var(--text-primary); text-decoration: none;">修改</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="setting-lock-app">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-icon"><i class="fa-solid fa-clock"></i></div>
+                                        <div class="settings-text">
+                                            <div class="settings-label">自动锁定时间</div>
+                                            <div class="settings-desc">无操作后自动锁定应用（分钟）</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <select class="settings-select" id="setting-auto-lock-time">
+                                            <option value="0">禁用</option>
+                                            <option value="5">5分钟</option>
+                                            <option value="10">10分钟</option>
+                                            <option value="15">15分钟</option>
+                                            <option value="30">30分钟</option>
+                                            <option value="60">60分钟</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                                        <div class="settings-text">
+                                            <div class="settings-label">防止截图录屏</div>
+                                            <div class="settings-desc">启用后窗口内容将无法被截图或录屏（Windows 10/11）</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="setting-prevent-screenshot">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- 终端外观 -->
+                        <div class="settings-section">
+                            <div class="settings-section-title">终端外观</div>
+                            <div class="settings-card">
+                                <!-- 字体大小 -->
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-icon"><i class="fa-solid fa-text-height"></i></div>
+                                        <div class="settings-text">
+                                            <div class="settings-label">字体大小</div>
+                                            <div class="settings-desc">调整终端文字的大小 (12px - 24px)</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <select class="settings-select" id="setting-font-size">
+                                            <option value="12">12px</option>
+                                            <option value="13">13px</option>
+                                            <option value="14">14px</option>
+                                            <option value="15" selected>15px (默认)</option>
+                                            <option value="16">16px</option>
+                                            <option value="18">18px</option>
+                                            <option value="20">20px</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- 光标样式 -->
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-icon"><i class="fa-solid fa-i-cursor"></i></div>
+                                        <div class="settings-text">
+                                            <div class="settings-label">光标样式</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <select class="settings-select" id="setting-cursor-style">
+                                            <option value="block">方块 (Block)</option>
+                                            <option value="bar" selected>竖线 (Bar)</option>
+                                            <option value="underline">下划线 (Underline)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- 终端文字颜色 -->
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-icon"><i class="fa-solid fa-palette"></i></div>
+                                        <div class="settings-text">
+                                            <div class="settings-label">终端文字颜色</div>
+                                            <div class="settings-desc">选择终端文字的颜色主题</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <select class="settings-select" id="setting-term-color">
+                                            <option value="white" selected>纯白 (White)</option>
+                                            <option value="green">绿色 (Green)</option>
+                                            <option value="cyan">青色 (Cyan)</option>
+                                            <option value="yellow">黄色 (Yellow)</option>
+                                            <option value="blue">蓝色 (Blue)</option>
+                                            <option value="orange">橙色 (Orange)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- 贴靠布局 (New) -->
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-icon"><i class="fa-solid fa-table-columns"></i></div>
+                                        <div class="settings-text">
+                                            <div class="settings-label">贴靠布局</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="setting-snap-layout" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <!-- 主题 (整合) -->
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-icon"><i class="fa-solid fa-palette"></i></div>
+                                        <div class="settings-text">
+                                            <div class="settings-label">主题</div>
+                                            <div class="settings-desc">选择界面主题样式</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <select class="settings-select" id="theme-select">
+                                            <option value="solid-dark">实体深色 (Solid Dark)</option>
+                                            <option value="solid-light">实体亮色 (Solid Light)</option>
+                                            <option value="acrylic-dark">毛玻璃暗色 (Acrylic Dark)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- 主题色选择 -->
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-icon"><i class="fa-solid fa-paintbrush"></i></div>
+                                        <div class="settings-text">
+                                            <div class="settings-label">主题色</div>
+                                            <div class="settings-desc">选择应用的主题颜色</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <select class="settings-select" id="setting-theme-color">
+                                            <option value="purple" selected>蓝紫色 (Purple)</option>
+                                            <option value="blue">蓝色 (Blue)</option>
+                                            <option value="green">绿色 (Green)</option>
+                                            <option value="cyan">青色 (Cyan)</option>
+                                            <option value="pink">粉色 (Pink)</option>
+                                            <option value="orange">橙色 (Orange)</option>
+                                            <option value="red">红色 (Red)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 关于 -->
+                        <div class="settings-section">
+                            <div class="settings-section-title">关于Fishell</div>
+                            <div class="settings-card">
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-icon"
+                                            style="background: transparent; font-size: 1.8rem; color: var(--accent-blue);">
+                                            <i class="fa-brands fa-linux"></i>
+                                        </div>
+                                        <div class="settings-text">
+                                            <div class="settings-label" id="version-status">当前版本</div>
+                                            <div class="settings-desc" id="current-version">0.0.1 内测版</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control" id="update-control">
+                                        <button class="btn-icon small" id="btn-check-update" title="检查更新">
+                                            <i class="fa-solid fa-rotate"></i>
+                                        </button>
+                                        <button class="btn-confirm hidden" id="btn-download-update" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                            <i class="fa-solid fa-download"></i> 下载更新
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- 更新信息区域（默认隐藏） -->
+                                <div class="settings-row hidden" id="update-info-row">
+                                    <div class="settings-info" style="width: 100%;">
+                                        <div class="settings-text" style="width: 100%;">
+                                            <div class="settings-label" style="color: #10b981;">
+                                                <i class="fa-solid fa-circle-info"></i> 新版本可用: <span id="new-version"></span>
+                                            </div>
+                                            <div class="settings-desc" id="release-notes" style="white-space: pre-line; margin-top: 8px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 下载进度条（默认隐藏） -->
+                                <div class="settings-row hidden" id="download-progress-row">
+                                    <div class="settings-info" style="width: 100%;">
+                                        <div class="settings-text" style="width: 100%;">
+                                            <div class="settings-label"><i class="fa-solid fa-download"></i> 正在下载更新...</div>
+                                            <div class="progress-bar-container" style="margin-top: 8px;">
+                                                <div class="progress-bar" id="download-progress" style="width: 0%;"></div>
+                                            </div>
+                                            <div class="settings-desc" id="download-status">准备下载...</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Advanced Settings Removed as requested -->
+
+                        <!-- 安全设置 (New) -->
+                        <div class="settings-section">
+                            <div class="settings-section-title" style="color: #ef4444;">危险区域</div>
+                            <div class="settings-card" style="border-color: rgba(239, 68, 68, 0.2);">
+                                <div class="settings-row">
+                                    <div class="settings-info">
+                                        <div class="settings-text">
+                                            <div class="settings-label">重置应用</div>
+                                            <div class="settings-desc">清除所有数据和设置，无法恢复</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-control">
+                                        <button class="btn-confirm" id="btn-reset-app"
+                                            style="background-color: #ef4444;">重置所有数据</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 终端区域容器 (Terminals) -->
+            <div id="terminals-container" class="layout-container hidden">
+                <!-- 动态生成的终端实例将放在这里 -->
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- 模态框：新建/编辑机器 -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">新建机器</h3>
+                <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <!-- 机器名称 -->
+                <div class="form-row">
+                    <label>机器名称</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="input-name" placeholder="请输入机器名称">
+                        <span class="char-count" id="name-count">0 / 30</span>
+                    </div>
+                </div>
+                <!-- Host & Port -->
+                <div class="form-row two-col">
+                    <div style="flex: 3;">
+                        <label>Host地址</label>
+                        <input type="text" id="input-host" placeholder="Host地址">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>&nbsp;</label> <!-- Spacer -->
+                        <input type="number" id="input-port" value="22">
+                    </div>
+                </div>
+                <!-- 用户名 -->
+                <div class="form-row">
+                    <label>用户名</label>
+                    <input type="text" id="input-user" placeholder="root">
+                </div>
+                <!-- 验证方式 -->
+                <div class="form-row">
+                    <label>验证方式</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="auth-method" value="password" checked>
+                            <span class="radio-custom"></span> 密码
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="auth-method" value="key">
+                            <span class="radio-custom"></span> 证书
+                        </label>
+                    </div>
+                </div>
+                <!-- 密码 -->
+                <div class="form-row" id="password-row">
+                    <label>密码</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="input-password" placeholder="请输入密码">
+                        <i class="fa-solid fa-eye-slash password-toggle" id="password-toggle"></i>
+                    </div>
+                </div>
+                <!-- 证书文件 -->
+                <div class="form-row hidden" id="key-file-row">
+                    <label>私钥文件</label>
+                    <div class="input-wrapper">
+                        <input type="file" id="input-key-file" accept=".pem,.key,.ppk,.openssh" style="display: none;">
+                        <input type="text" id="input-key-path" placeholder="选择私钥文件" readonly>
+                        <button type="button" class="btn-file-select" id="btn-select-key">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- 私钥密码 -->
+                <div class="form-row hidden" id="key-passphrase-row">
+                    <label>私钥密码</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="input-key-passphrase" placeholder="私钥密码（如果有）">
+                        <i class="fa-solid fa-eye-slash password-toggle" id="key-passphrase-toggle"></i>
+                    </div>
+                </div>
+                <!-- 备注 -->
+                <div class="form-row">
+                    <label>备注</label>
+                    <div class="input-wrapper">
+                        <textarea id="input-remark" placeholder="请输入备注信息 (选填)" rows="3"></textarea>
+                        <span class="char-count bottom" id="remark-count">0 / 50</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer enhanced-footer">
+                <button class="btn-test-connect"><i class="fa-solid fa-cloud-bolt"></i> 测试连接</button>
+                <div class="footer-actions">
+                    <button class="btn-confirm" id="btn-save">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：服务器详情 -->
+    <div id="modal-details-overlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>服务器详情</h3>
+                <button class="close-details"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">机器名称</span>
+                        <div class="detail-value" id="detail-name">--</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">状态</span>
+                        <div class="detail-value" id="detail-status">--</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Host 地址</span>
+                        <div class="detail-value" id="detail-host">--</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">端口</span>
+                        <div class="detail-value" id="detail-port">--</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">用户</span>
+                        <div class="detail-value" id="detail-user">--</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">添加时间</span>
+                        <div class="detail-value" id="detail-added">--</div>
+                    </div>
+                    <!-- 资源信息 -->
+                    <div class="detail-item">
+                        <span class="detail-label">CPU 使用率</span>
+                        <div class="detail-value" id="detail-cpu">--</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">内存使用率</span>
+                        <div class="detail-value" id="detail-mem">--</div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">磁盘使用率</span>
+                        <div class="detail-value" id="detail-disk">--</div>
+                    </div>
+                    <div class="detail-item detail-full">
+                        <span class="detail-label">操作系统</span>
+                        <div class="detail-value" id="detail-os">--</div>
+                    </div>
+                    <div class="detail-item detail-full">
+                        <span class="detail-label">备注</span>
+                        <div class="input-wrapper" style="margin-top: 4px;">
+                            <textarea id="detail-remark-edit" class="detail-value remark"
+                                style="width: 100%; resize: none; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); outline: none; font-family: inherit;"
+                                rows="3" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer Removed -->
+        </div>
+    </div>
+    <!-- 模态框：设置密码 -->
+    <div id="modal-password-overlay" class="modal-overlay hidden">
+        <div class="modal" style="width: 320px;">
+            <div class="modal-header">
+                <h3>设置应用锁密码</h3>
+                <button class="close-pwd-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <label>新密码</label>
+                    <input type="password" id="input-new-pwd" placeholder="输入密码">
+                </div>
+                <div class="form-row">
+                    <label>确认密码</label>
+                    <input type="password" id="input-confirm-pwd" placeholder="再次输入密码">
+                </div>
+            </div>
+            <div class="modal-footer enhanced-footer" style="justify-content: flex-end;">
+                <button class="btn-confirm" id="btn-save-pwd">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 锁定屏幕 -->
+    <div id="lock-screen" class="lock-screen-overlay hidden">
+        <div class="lock-screen-content">
+            <div class="lock-screen-logo">
+                <div class="logo-loader">
+                    <div class="logo-container">
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                        <div class="logo-slice"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="lock-screen-password-display">
+                <span class="lock-screen-dots" id="lock-screen-dots"></span>
+            </div>
+            <input type="password" id="input-unlock-pwd" class="lock-screen-input-hidden" autocomplete="off"
+                spellcheck="false">
+        </div>
+    </div>
+    <!-- 自定义右键菜单 -->
+    <div id="context-menu" class="dropdown-menu hidden" style="position: fixed; z-index: 3000; width: 160px;">
+        <div class="menu-item" id="ctx-copy"><i class="fa-regular fa-copy"></i> 复制</div>
+        <div class="menu-item" id="ctx-paste"><i class="fa-regular fa-paste"></i> 粘贴</div>
+        <div class="menu-item" id="ctx-select-all"><i class="fa-solid fa-i-cursor"></i> 全选</div>
+        <div style="height: 1px; background: var(--border-color); margin: 4px 0;"></div>
+        <div class="menu-item" id="ctx-clear"><i class="fa-solid fa-eraser"></i> 清屏</div>
+    </div>
+
+    <!-- 自定义 Alert/Confirm 弹窗 -->
+    <div id="custom-dialog-overlay" class="modal-overlay hidden" style="z-index: 4000;">
+        <div class="modal custom-dialog-modal" style="width: 420px; text-align: center;">
+            <div class="modal-body" style="padding: 40px 30px 20px;">
+                <div id="dialog-icon" class="dialog-icon-wrapper" style="display: none;">
+                </div>
+                <h3 id="dialog-title" class="dialog-title">提示</h3>
+                <p id="dialog-message" class="dialog-message"></p>
+            </div>
+            <div class="modal-footer enhanced-footer dialog-footer" style="border-top: none; background: transparent;">
+                <button class="btn-cancel hidden" id="dialog-btn-cancel">取消</button>
+                <button class="btn-confirm" id="dialog-btn-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：文件编辑器 -->
+    <div id="modal-editor-overlay" class="modal-overlay hidden" style="z-index: 3500;">
+        <div class="modal"
+            style="width: 800px; height: 600px; display: flex; flex-direction: column; max-width: 95vw; max-height: 90vh;">
+            <div class="modal-header">
+                <h3 style="max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <i class="fa-solid fa-pen-to-square"></i> 编辑文件: <span id="editor-filename">--</span>
+                </h3>
+                <button class="close-editor"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body"
+                style="flex: 1; padding: 0; overflow: hidden; display: flex; flex-direction: column; background: #1e1e1e;">
+                <textarea id="editor-content"
+                    style="flex: 1; background: #1e1e1e; color: #d4d4d4; border: none; padding: 15px; font-family: 'Consolas', 'Courier New', monospace; resize: none; outline: none; line-height: 1.5; font-size: 14px;"
+                    spellcheck="false"></textarea>
+            </div>
+            <div class="modal-footer enhanced-footer">
+                <div style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-brands fa-markdown"></i> Ctrl+S
+                    保存</div>
+                <div class="footer-actions">
+                    <button class="btn-cancel close-editor">关闭</button>
+                    <button class="btn-confirm" id="btn-save-file"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：文件操作菜单 (双击触发) -->
+    <div id="modal-file-actions-overlay" class="modal-overlay hidden" style="z-index: 3100;">
+        <div class="modal" style="width: 360px;">
+            <div class="modal-header">
+                <h3 id="file-actions-title">文件操作</h3>
+                <button class="close-file-actions"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div class="action-list" style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="action-btn" id="action-edit"
+                        style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: var(--text-primary); cursor: pointer; transition: all 0.2s;">
+                        <i class="fa-solid fa-pen-to-square" style="color: var(--accent-blue);"></i>
+                        <div style="text-align: left;">
+                            <div style="font-weight: 500;">编辑 / 打开</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">查看或修改文件内容</div>
+                        </div>
+                    </button>
+                    <button class="action-btn" id="action-download"
+                        style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: var(--text-primary); cursor: pointer; transition: all 0.2s;">
+                        <i class="fa-solid fa-download" style="color: #10b981;"></i>
+                        <div style="text-align: left;">
+                            <div style="font-weight: 500;">下载</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">保存到本地电脑</div>
+                        </div>
+                    </button>
+                    <button class="action-btn" id="action-delete"
+                        style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: var(--text-primary); cursor: pointer; transition: all 0.2s;">
+                        <i class="fa-solid fa-trash" style="color: #ef4444;"></i>
+                        <div style="text-align: left;">
+                            <div style="font-weight: 500;">删除</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">永久删除此文件</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右下角更新通知 -->
+    <div id="update-toast" class="update-toast hidden">
+        <div class="update-toast-header">
+            <div class="update-toast-title">
+                <span>新版本可用: </span>
+                <span id="update-new-ver">1.3.0</span>
+            </div>
+            <button class="update-toast-close" id="btn-update-close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="update-toast-body">
+            <div class="update-toast-notes" id="update-notes-content">更新内容加载中...</div>
+            <div id="update-download-progress" class="update-toast-progress hidden">
+                <div class="progress-bar-bg">
+                    <div id="update-progress-bar" class="progress-bar-fill"></div>
+                </div>
+                <span id="update-progress-text">0%</span>
+            </div>
+        </div>
+        <div class="update-toast-footer">
+            <button class="btn-later" id="btn-update-later">稍后</button>
+            <button class="btn-update" id="btn-update-now">
+                <i class="fa-solid fa-download"></i>
+                <span>更新</span>
+            </button>
+        </div>
+    </div>
+
+</body>
+
+</html>

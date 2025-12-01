@@ -5,136 +5,136 @@
 </p>
 
 <p align="center">
-  <strong>A Modern SSH Client and Server Management Tool</strong>
+  <strong>现代化的 SSH 客户端和服务器管理工具</strong>
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#tech-stack">Tech Stack</a> •
-  <a href="README_CN.md">中文文档</a>
+  <a href="#功能特性">功能特性</a> •
+  <a href="#安装">安装</a> •
+  <a href="#使用说明">使用说明</a> •
+  <a href="#技术栈">技术栈</a> •
+  <a href="README_EN.md">English</a>
 </p>
 
 ---
 
-## ✨ Features
+## ✨ 功能特性
 
-### 🖥️ Terminal Management
-- **Multi-tab Terminal** - Manage multiple SSH sessions simultaneously
-- **Smart Terminal** - High-performance terminal emulator based on xterm.js
-- **Custom Appearance** - Font size, cursor style, terminal color customization
+### 🖥️ 终端管理
+- **多标签终端** - 同时管理多个 SSH 会话，轻松切换
+- **智能终端** - 基于 xterm.js 的高性能终端模拟器
+- **自定义外观** - 支持字体大小、光标样式、终端颜色等个性化设置
 
-### 📁 File Management
-- **SFTP Integration** - Built-in SFTP file browser with upload/download support
-- **Sidebar File Manager** - Quick file browsing alongside terminal
-- **Drag & Drop Upload** - Drag files directly to upload to server
+### 📁 文件管理
+- **SFTP 集成** - 内置 SFTP 文件浏览器，支持上传下载
+- **侧边栏文件管理** - 在终端旁边快速浏览服务器文件
+- **拖拽上传** - 支持拖拽文件直接上传到服务器
 
-### 🔐 Security Features
-- **AES-256-GCM Encryption** - Military-grade encryption for all sensitive data
-- **Argon2 Key Derivation** - State-of-the-art algorithm resistant to GPU attacks
-- **App Lock** - Startup password protection
-- **Screenshot Protection** - Window content protection on Windows 10/11
-- **Auto Lock** - Automatic lock on inactivity
+### 🔐 安全特性
+- **AES-256-GCM 加密** - 所有敏感数据均采用军事级加密存储
+- **Argon2 密钥派生** - 使用最先进的密钥派生算法，抵抗 GPU 暴力破解
+- **应用锁** - 支持启动密码保护，防止未授权访问
+- **防截图录屏** - Windows 10/11 下可启用窗口内容保护
+- **自动锁定** - 无操作自动锁定，保护隐私安全
 
-### 🎨 UI Design
-- **Windows Mica/Acrylic** - Native support for Windows 11 Mica and Windows 10 Acrylic effects
-- **Multiple Themes** - Solid Dark, Solid Light, Acrylic Dark
-- **Theme Colors** - Purple, Blue, Green, Cyan, Pink, Orange, Red
-- **Smooth Animations** - Carefully designed transitions
+### 🎨 界面设计
+- **Windows Mica/Acrylic** - 原生支持 Windows 11 Mica 和 Windows 10 Acrylic 毛玻璃效果
+- **多主题支持** - 实体深色、实体亮色、毛玻璃暗色三种主题
+- **主题色自定义** - 蓝紫、蓝、绿、青、粉、橙、红多种主题色可选
+- **流畅动画** - 精心设计的过渡动画，提升使用体验
 
-### 📊 Server Monitoring
-- **Real-time Monitoring** - CPU, Memory, Disk usage display
-- **Server Status** - Online/Offline status at a glance
-- **Quick Connect** - Double-click to connect
+### 📊 服务器监控
+- **实时监控** - CPU、内存、磁盘使用率实时显示
+- **服务器状态** - 在线/离线状态一目了然
+- **快速连接** - 双击即可快速连接服务器
 
-### 🔧 Other Features
-- **Password/Key Auth** - Support for password and SSH private key authentication
-- **Import/Export** - Backup and restore server configurations
-- **Auto Update** - Built-in update checker
+### 🔧 其他特性
+- **密码/密钥认证** - 支持密码和 SSH 私钥两种认证方式
+- **数据导入导出** - 支持服务器配置的备份和恢复
+- **自动更新** - 内置更新检查，保持软件最新
 
-## 📦 Installation
+## 📦 安装
 
-### Option 1: Download Installer (Recommended)
+### 方式一：下载安装包（推荐）
 
-Download the latest installer from [Releases](https://github.com/jasonszeng/Fishell/releases) page.
+从 [Releases](https://github.com/jasonszeng/Fishell/releases) 页面下载最新版本的安装包。
 
-### Option 2: Run from Source
+### 方式二：从源码运行
 
-1. Clone the repository
+1. 克隆仓库
 ```bash
 git clone https://github.com/jasonszeng/Fishell.git
 cd Fishell
 ```
 
-2. Install dependencies
+2. 安装依赖
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Run the application
+3. 运行程序
 ```bash
 python app.py
 ```
 
-## 📋 System Requirements
+## 📋 系统要求
 
-- **OS**: Windows 10 1903+ / Windows 11
-- **Python**: 3.8+ (required when running from source)
-- **Memory**: 4GB+ recommended
+- **操作系统**: Windows 10 1903+ / Windows 11
+- **Python**: 3.8+（从源码运行时需要）
+- **内存**: 建议 4GB+
 
-## 🛠️ Tech Stack
+## 🛠️ 技术栈
 
-| Component | Technology |
-|-----------|------------|
-| Backend | Python 3, Paramiko (SSH) |
-| Frontend | HTML5, CSS3, JavaScript |
-| Terminal | xterm.js |
-| GUI Framework | pywebview (CEF) |
-| Encryption | cryptography (AES-256-GCM, Argon2) |
-| Serialization | MessagePack |
+| 组件 | 技术 |
+|------|------|
+| 后端 | Python 3, Paramiko (SSH) |
+| 前端 | HTML5, CSS3, JavaScript |
+| 终端 | xterm.js |
+| GUI 框架 | pywebview (CEF) |
+| 加密 | cryptography (AES-256-GCM, Argon2) |
+| 序列化 | MessagePack |
 
-## 📖 Usage
+## 📖 使用说明
 
-### Add Server
-1. Click the "+" button in the top left corner
-2. Fill in server information (name, IP, port, username)
-3. Select authentication method (password or SSH key)
-4. Click Save
+### 添加服务器
+1. 点击左上角 "+" 按钮
+2. 填写服务器信息（名称、IP、端口、用户名）
+3. 选择认证方式（密码或 SSH 密钥）
+4. 点击保存
 
-### Connect to Server
-- Double-click the server card to connect
-- A new terminal tab will open upon successful connection
+### 连接服务器
+- 双击服务器卡片即可连接
+- 连接成功后会自动打开新的终端标签
 
-### File Management
-- After connecting, the sidebar will show the file browser
-- Click folders to enter, click ".." to go back
-- Use toolbar buttons for upload, refresh, etc.
+### 文件管理
+- 连接服务器后，侧边栏会显示文件浏览器
+- 点击文件夹进入，点击 ".." 返回上级
+- 使用工具栏按钮进行上传、刷新等操作
 
-### Security Settings
-- Enable "App Lock" in settings to set startup password
-- Enable "Screenshot Protection" to protect window content
-- Set "Auto Lock Time" to lock automatically on inactivity
+### 安全设置
+- 在设置中启用"应用锁"可设置启动密码
+- 启用"防止截图录屏"可保护窗口内容
+- 设置"自动锁定时间"可在无操作后自动锁定
 
-## 🔒 Security
+## 🔒 安全说明
 
-Fishell takes data security seriously:
+Fishell 非常重视数据安全：
 
-- All server passwords and SSH keys are encrypted with **AES-256-GCM**
-- Encryption keys are derived using **Argon2id** algorithm
-- Data files use `.fishell` binary format
-- App lock and auto-lock prevent unauthorized access
+- 所有服务器密码和 SSH 密钥均使用 **AES-256-GCM** 加密存储
+- 加密密钥通过 **Argon2id** 算法派生，具有极高的抗暴力破解能力
+- 数据文件使用 `.fishell` 二进制格式，无法直接读取
+- 支持应用锁和自动锁定，防止未授权访问
 
-## 📄 License
+## 📄 许可证
 
 MIT License
 
-## 🤝 Contributing
+## 🤝 贡献
 
-Issues and Pull Requests are welcome!
+欢迎提交 Issue 和 Pull Request！
 
 ---
 
 <p align="center">
-  Made with ❤️ for developers
+  用心为开发者打造 ❤️
 </p>
